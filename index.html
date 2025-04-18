@@ -42,7 +42,6 @@
     .nepali-date {
       font-weight: bold;
       font-size: 1.2rem;
-      position: relative;
     }
     .gregorian-date {
       font-size: 0.8rem;
@@ -63,22 +62,32 @@
       white-space: nowrap;
       z-index: 10;
     }
-    .short-event {
-      font-size: 0.75rem;
-      color: #ff6063;
-      font-weight: bold;
-    }
+    
+    /* Keep the height fixed for event containers */
+    .short-event,
     .full-event {
       font-size: 0.75rem;
-      color: #ff4040;
+      font-weight: bold;
+      color: #ff6063;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      text-align: center;
       display: none;
     }
-    .calendar-table td:hover .short-event {
-      display: none;
-    }
+
+    /* Show full event name on hover */
     .calendar-table td:hover .full-event {
       display: block;
     }
+
+    /* The short event name stays visible unless hovered */
+    .calendar-table td:hover .short-event {
+      display: none;
+    }
+
     #eventForm {
       background-color: white;
       padding: 20px;
@@ -97,15 +106,19 @@
       border-radius: 5px;
       font-weight: bold;
     }
-    .nav-buttons {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-    .nav-buttons button {
-      background-color: #ff6063;
+
+    .calendar-nav-button {
+      background-color: rgb(255, 96, 99);
       color: white;
+      font-weight: bold;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .calendar-nav-button:disabled {
+      background-color: #d1d1d1;
+      cursor: not-allowed;
     }
   </style>
 </head>
@@ -113,7 +126,10 @@
   <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h1 class="text-center" style="color: #ff6063;">Nepali Calendar 2082</h1>
-      <button class="btn" style="background-color: #ff6063; color: white;" onclick="toggleEventForm()">Event Addition +</button>
+      <div>
+        <button class="calendar-nav-button" id="prevButton" onclick="navigateMonth('prev')" disabled>Previous</button>
+        <button class="calendar-nav-button" id="nextButton" onclick="navigateMonth('next')">Next</button>
+      </div>
     </div>
 
     <div id="eventForm" class="mb-5">
@@ -160,12 +176,6 @@
       </form>
     </div>
 
-    <div class="nav-buttons">
-      <button id="prevButton" class="btn" onclick="changeMonth(-1)" disabled>Previous</button>
-      <div id="monthTitle" class="month-header text-center"></div>
-      <button id="nextButton" class="btn" onclick="changeMonth(1)">Next</button>
-    </div>
-
     <div id="calendar"></div>
   </div>
 
@@ -185,8 +195,8 @@
       { name: "Chaitra", gregorian: "March - April", days: 30, startDay: 6 },
     ];
 
-    let importantDays = JSON.parse(localStorage.getItem('importantDays')) || {};
-    let currentMonthIndex = 0;
+    const importantDays = {};
+    let currentMonthIndex = 0; // Keep track of the current displayed month
 
     function toggleInputMode() {
       const mode = document.getElementById("inputMode").value;
@@ -203,42 +213,28 @@
       e.preventDefault();
       const mode = document.getElementById("inputMode").value;
       let date = "";
-
       if (mode === "manual") {
         date = document.getElementById("eventDate").value;
       } else {
         const month = document.getElementById("monthSelect").value;
         const day = document.getElementById("daySelect").value;
         if (!month || !day) {
-          showMessage("Please select both month and day.", "error");
+          alert("Please select both month and day.");
           return;
         }
         date = `2082-${month}-${day}`;
       }
-
-      const shortName = document.getElementById("shortEventName").value.trim();
-      const fullName = document.getElementById("fullEventName").value.trim();
-
+      const shortName = document.getElementById("shortEventName").value;
+      const fullName = document.getElementById("fullEventName").value;
       if (date && shortName && fullName) {
         importantDays[date] = { short: shortName, full: fullName };
-        localStorage.setItem('importantDays', JSON.stringify(importantDays)); // Save to localStorage
         generateCalendar();
         e.target.reset();
         toggleInputMode();
-        showMessage("Event added successfully!", "success");
-      } else {
-        showMessage("Event not added. Please fill all fields.", "error");
+        const success = document.getElementById("successMessage");
+        success.style.display = "block";
+        setTimeout(() => success.style.display = "none", 3000);
       }
-    }
-
-    function showMessage(msg, type) {
-      const successBox = document.getElementById("successMessage");
-      successBox.textContent = msg;
-      successBox.style.display = "block";
-      successBox.style.color = type === "success" ? "#155724" : "#721c24";
-      successBox.style.backgroundColor = type === "success" ? "#d4edda" : "#f8d7da";
-      successBox.style.borderColor = type === "success" ? "#c3e6cb" : "#f5c6cb";
-      setTimeout(() => (successBox.style.display = "none"), 3000);
     }
 
     function populateDropdowns() {
@@ -258,28 +254,19 @@
 
     function generateCalendar() {
       const calendarDiv = document.getElementById("calendar");
-      const monthTitle = document.getElementById("monthTitle");
       calendarDiv.innerHTML = "";
       const month = nepaliMonths[currentMonthIndex];
-      monthTitle.textContent = `${month.name} 2082 (${month.gregorian})`;
-
-      const prevButton = document.getElementById("prevButton");
-      const nextButton = document.getElementById("nextButton");
-
-      prevButton.disabled = currentMonthIndex === 0;
-      nextButton.disabled = currentMonthIndex === nepaliMonths.length - 1;
-
-      let currentGregorian = new Date("2025-04-14");
-      let startDay = month.startDay;
-
       const monthDiv = document.createElement("div");
       monthDiv.className = "calendar-month";
-      let html = `<table class='table table-bordered calendar-table'>
-                   <thead><tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr></thead>
-                   <tbody>`;
+      let html = `<div class='d-flex justify-content-between align-items-center mb-3'>
+                    <div class='month-header'>${month.name} 2082</div>
+                    <div class='gregorian-month'>(${month.gregorian})</div>
+                  </div>`;
+      html += `<table class='table table-bordered calendar-table'>
+                 <thead><tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr></thead>
+                 <tbody>`;
       let dayCounter = 1;
-      let weekDay = startDay;
-
+      let weekDay = month.startDay;
       while (dayCounter <= month.days) {
         html += '<tr>';
         for (let i = 0; i < 7; i++) {
@@ -287,22 +274,11 @@
             html += '<td></td>';
           } else {
             const nepaliDate = `2082-${(currentMonthIndex + 1).toString().padStart(2, '0')}-${dayCounter.toString().padStart(2, '0')}`;
-            const gregorianDate = new Date(currentGregorian);
-            const gregorianDisplay = gregorianDate.getDate();
-            const gregorianMonth = gregorianDate.toLocaleString('default', { month: 'long' });
             const event = importantDays[nepaliDate];
             html += `<td>
                         <div class="nepali-date">${dayCounter}</div>
-                        <div class="gregorian-date" data-month="${gregorianMonth}">${gregorianDisplay}</div>
-                        ${event ? `
-                          <div class='short-event' title="${event.full}">
-                            ${event.short}
-                          </div>
-                          <div class='full-event'>
-                            ${event.full}
-                          </div>` : ''}
+                        ${event ? `<div class='short-event'>${event.short}</div><div class='full-event'>${event.full}</div>` : ''}
                       </td>`;
-            currentGregorian.setDate(currentGregorian.getDate() + 1);
             dayCounter++;
           }
         }
@@ -311,10 +287,17 @@
       html += '</tbody></table>';
       monthDiv.innerHTML = html;
       calendarDiv.appendChild(monthDiv);
+
+      document.getElementById("prevButton").disabled = currentMonthIndex === 0;
+      document.getElementById("nextButton").disabled = currentMonthIndex === nepaliMonths.length - 1;
     }
 
-    function changeMonth(direction) {
-      currentMonthIndex += direction;
+    function navigateMonth(direction) {
+      if (direction === 'prev' && currentMonthIndex > 0) {
+        currentMonthIndex--;
+      } else if (direction === 'next' && currentMonthIndex < nepaliMonths.length - 1) {
+        currentMonthIndex++;
+      }
       generateCalendar();
     }
 
