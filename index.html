@@ -9,104 +9,161 @@
     rel="stylesheet"
   />
   <style>
-    body {
-      background: linear-gradient(to bottom, #fff3e0, #ffffff);
-    }
-    .calendar-month {
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 30px;
-      background-color: white;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    .month-header {
-      font-weight: bold;
-      font-size: 1.5rem;
-      color: #e65100;
-    }
-    .gregorian-month {
-      font-size: 0.9rem;
-      color: #6d4c41;
-    }
-    .calendar-table th, .calendar-table td {
-      text-align: center;
-      vertical-align: middle;
-      height: 60px;
-      position: relative;
-    }
-    .calendar-table thead {
-      background-color: rgb(0, 13, 77);
-      color: white;
-    }
-    .nepali-date {
-      font-weight: bold;
-      font-size: 1.2rem;
-      position: relative;
-    }
-    .gregorian-date {
-      font-size: 0.8rem;
-      color: #6d4c41;
-      position: relative;
-    }
-    .gregorian-date:hover::after {
-      content: attr(data-month);
-      position: absolute;
-      bottom: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #ff6063;
-      color: #ffffff;
-      font-size: 0.75rem;
-      padding: 2px 6px;
-      border-radius: 5px;
-      white-space: nowrap;
-      z-index: 10;
-    }
-    .short-event {
-      font-size: 0.75rem;
-      color: #ff6063;
-      font-weight: bold;
-    }
-    .full-event {
-      font-size: 0.75rem;
-      color: #ff4040;
-      display: none;
-    }
-    .calendar-table td:hover .short-event {
-      display: none;
-    }
-    .calendar-table td:hover .full-event {
-      display: block;
-    }
-    #eventForm {
-      background-color: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      margin-bottom: 30px;
-      display: none;
-    }
-    #successMessage {
-      display: none;
-      margin-top: 15px;
-      color: #155724;
-      background-color: #d4edda;
-      border: 1px solid #c3e6cb;
-      padding: 10px;
-      border-radius: 5px;
-      font-weight: bold;
-    }
-    .nav-buttons {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-    .nav-buttons button {
-      background-color: #ff6063;
-      color: white;
-    }
+body {
+  background: linear-gradient(to bottom, #fff3e0, #ffffff);
+}
+
+.calendar-month {
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.month-header {
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: #e65100;
+}
+
+.gregorian-month {
+  font-size: 0.9rem;
+  color: #6d4c41;
+}
+
+.calendar-table th,
+.calendar-table td {
+  text-align: center;
+  vertical-align: middle;
+  height: 80px; /* Ensure uniform height for each date cell */
+  position: relative;
+}
+
+.calendar-table thead {
+  background-color: rgb(0, 13, 77);
+  color: white;
+}
+
+.nepali-date {
+  font-weight: bold;
+  font-size: 1.2rem;
+  position: relative;
+  top: -10px; /* Shift Nepali date a little bit upwards */
+}
+
+.gregorian-date {
+  font-size: 0.8rem;
+  color: #6d4c41;
+  position: relative;
+  top: -5px; /* Adjust Gregorian date's position along with Nepali date */
+}
+
+.gregorian-date:hover::after {
+  content: attr(data-month);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ff6063;
+  color: #ffffff;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 5px;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.short-event,
+.full-event {
+  font-size: 0.75rem;
+  color: #ff6063;
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  transition: opacity 0.2s ease-in-out;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  visibility: hidden;
+}
+
+.short-event {
+  font-size: 0.75rem;
+  color: #ff6063;
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  transition: opacity 0.2s ease-in-out;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  visibility: visible;
+  top: 75%; /* Shift the short event a little further down */
+}
+
+
+.full-event {
+  visibility: hidden;
+  color: #ff4040;
+  top: 75%; /* Same positioning for full event to replace the short event */
+}
+
+.calendar-table td {
+  position: relative;
+  height: 80px;  /* Increased height to ensure enough space */
+  padding: 5px 0;
+}
+
+.calendar-table td:hover .short-event {
+  visibility: hidden; /* Hide the short event on hover */
+}
+
+.calendar-table td:hover .full-event {
+  visibility: visible; /* Show the full event on hover */
+}
+
+.calendar-table td .short-event,
+.calendar-table td .full-event {
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#eventForm {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+  display: none;
+}
+
+#successMessage {
+  display: none;
+  margin-top: 15px;
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  padding: 10px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.nav-buttons button {
+  background-color: #ff6063;
+  color: white;
+}
   </style>
 </head>
 <body>
