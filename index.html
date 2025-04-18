@@ -42,6 +42,7 @@
     .nepali-date {
       font-weight: bold;
       font-size: 1.2rem;
+      position: relative;
     }
     .gregorian-date {
       font-size: 0.8rem;
@@ -67,6 +68,17 @@
       color: #ff6063;
       font-weight: bold;
     }
+    .full-event {
+      font-size: 0.75rem;
+      color: #ff4040;
+      display: none;
+    }
+    .calendar-table td:hover .short-event {
+      display: none;
+    }
+    .calendar-table td:hover .full-event {
+      display: block;
+    }
     #eventForm {
       background-color: white;
       padding: 20px;
@@ -84,6 +96,16 @@
       padding: 10px;
       border-radius: 5px;
       font-weight: bold;
+    }
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .nav-buttons button {
+      background-color: #ff6063;
+      color: white;
     }
   </style>
 </head>
@@ -138,6 +160,12 @@
       </form>
     </div>
 
+    <div class="nav-buttons">
+      <button id="prevButton" class="btn" onclick="changeMonth(-1)" disabled>Previous</button>
+      <div id="monthTitle" class="month-header text-center"></div>
+      <button id="nextButton" class="btn" onclick="changeMonth(1)">Next</button>
+    </div>
+
     <div id="calendar"></div>
   </div>
 
@@ -158,6 +186,7 @@
     ];
 
     let importantDays = JSON.parse(localStorage.getItem('importantDays')) || {};
+    let currentMonthIndex = 0;
 
     function toggleInputMode() {
       const mode = document.getElementById("inputMode").value;
@@ -229,50 +258,64 @@
 
     function generateCalendar() {
       const calendarDiv = document.getElementById("calendar");
+      const monthTitle = document.getElementById("monthTitle");
       calendarDiv.innerHTML = "";
+      const month = nepaliMonths[currentMonthIndex];
+      monthTitle.textContent = `${month.name} 2082 (${month.gregorian})`;
+
+      const prevButton = document.getElementById("prevButton");
+      const nextButton = document.getElementById("nextButton");
+
+      prevButton.disabled = currentMonthIndex === 0;
+      nextButton.disabled = currentMonthIndex === nepaliMonths.length - 1;
+
       let currentGregorian = new Date("2025-04-14");
-      let startDay = 1;
-      nepaliMonths.forEach((month, index) => {
-        const monthDiv = document.createElement("div");
-        monthDiv.className = "calendar-month";
-        let html = `<div class='d-flex justify-content-between align-items-center mb-3'>
-                      <div class='month-header'>${month.name} 2082</div>
-                      <div class='gregorian-month'>(${month.gregorian})</div>
-                    </div>`;
-        html += `<table class='table table-bordered calendar-table'>
+      let startDay = month.startDay;
+
+      const monthDiv = document.createElement("div");
+      monthDiv.className = "calendar-month";
+      let html = `<table class='table table-bordered calendar-table'>
                    <thead><tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr></thead>
                    <tbody>`;
-        let dayCounter = 1;
-        let weekDay = month.startDay;
-        while (dayCounter <= month.days) {
-          html += '<tr>';
-          for (let i = 0; i < 7; i++) {
-            if ((dayCounter === 1 && i < weekDay) || dayCounter > month.days) {
-              html += '<td></td>';
-            } else {
-              const nepaliDate = `2082-${(index + 1).toString().padStart(2, '0')}-${dayCounter.toString().padStart(2, '0')}`;
-              const gregorianDate = new Date(currentGregorian);
-              const gregorianDisplay = gregorianDate.getDate();
-              const gregorianMonth = gregorianDate.toLocaleString('default', { month: 'long' });
-              const event = importantDays[nepaliDate];
-              html += `<td>
-                          <div class="nepali-date">${dayCounter}</div>
-                          <div class="gregorian-date" data-month="${gregorianMonth}">${gregorianDisplay}</div>
-                          ${event ? `
-                            <div class='short-event' title="${event.full}">
-                              ${event.short}
-                            </div>` : ''}
-                        </td>`;
-              currentGregorian.setDate(currentGregorian.getDate() + 1);
-              dayCounter++;
-            }
+      let dayCounter = 1;
+      let weekDay = startDay;
+
+      while (dayCounter <= month.days) {
+        html += '<tr>';
+        for (let i = 0; i < 7; i++) {
+          if ((dayCounter === 1 && i < weekDay) || dayCounter > month.days) {
+            html += '<td></td>';
+          } else {
+            const nepaliDate = `2082-${(currentMonthIndex + 1).toString().padStart(2, '0')}-${dayCounter.toString().padStart(2, '0')}`;
+            const gregorianDate = new Date(currentGregorian);
+            const gregorianDisplay = gregorianDate.getDate();
+            const gregorianMonth = gregorianDate.toLocaleString('default', { month: 'long' });
+            const event = importantDays[nepaliDate];
+            html += `<td>
+                        <div class="nepali-date">${dayCounter}</div>
+                        <div class="gregorian-date" data-month="${gregorianMonth}">${gregorianDisplay}</div>
+                        ${event ? `
+                          <div class='short-event' title="${event.full}">
+                            ${event.short}
+                          </div>
+                          <div class='full-event'>
+                            ${event.full}
+                          </div>` : ''}
+                      </td>`;
+            currentGregorian.setDate(currentGregorian.getDate() + 1);
+            dayCounter++;
           }
-          html += '</tr>';
         }
-        html += '</tbody></table>';
-        monthDiv.innerHTML = html;
-        calendarDiv.appendChild(monthDiv);
-      });
+        html += '</tr>';
+      }
+      html += '</tbody></table>';
+      monthDiv.innerHTML = html;
+      calendarDiv.appendChild(monthDiv);
+    }
+
+    function changeMonth(direction) {
+      currentMonthIndex += direction;
+      generateCalendar();
     }
 
     populateDropdowns();
