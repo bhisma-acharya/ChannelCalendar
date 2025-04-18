@@ -157,7 +157,7 @@
       { name: "Chaitra", gregorian: "March - April", days: 30, startDay: 6 },
     ];
 
-    const importantDays = {};
+    let importantDays = JSON.parse(localStorage.getItem('importantDays')) || {};
 
     function toggleInputMode() {
       const mode = document.getElementById("inputMode").value;
@@ -192,6 +192,7 @@
 
       if (date && shortName && fullName) {
         importantDays[date] = { short: shortName, full: fullName };
+        localStorage.setItem('importantDays', JSON.stringify(importantDays)); // Save to localStorage
         generateCalendar();
         e.target.reset();
         toggleInputMode();
