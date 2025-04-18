@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nepali Calendar 2082</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      background: linear-gradient(to bottom, #f1f3f9, #f1f3f9);
+    }
+    .calendar-month {
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+      background-color: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .month-header {
+      font-weight: bold;
+      font-size: 1.5rem;
+      color: #e65100;
+    }
+    .gregorian-month {
+      font-size: 0.9rem;
+      color: #6d4c41;
+    }
+    .calendar-table th, .calendar-table td {
+      text-align: center;
+      vertical-align: middle;
+      height: 60px;
+      position: relative;
+    }
+    .calendar-table thead {
+      background-color: rgb(0, 13, 77);
+      color: white;
+    }
+    .nepali-date {
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+    .gregorian-date {
+      font-size: 0.8rem;
+      color: #6d4c41;
+      position: relative;
+    }
+    .gregorian-date:hover::after {
+      content: attr(data-month);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #ff6063;
+      color: #ffffff;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 5px;
+      white-space: nowrap;
+      z-index: 10;
+    }
+    .short-event {
+      font-size: 0.75rem;
+      color: #ff6063;
+      font-weight: bold;
+    }
+    #eventForm {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+      display: none;
+    }
+    #successMessage {
+      display: none;
+      margin-top: 15px;
+      color: #155724;
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      padding: 10px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="text-center" style="color: #ff6063;">Nepali Calendar 2082</h1>
+      <button class="btn" style="background-color: #ff6063; color: white;" onclick="toggleEventForm()">Event Addition +</button>
+    </div>
+
+    <div id="eventForm" class="mb-5">
+      <h4>Add National/International Day</h4>
+      <form onsubmit="addEvent(event)">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Choose Input Method</label>
+            <select class="form-select" id="inputMode" onchange="toggleInputMode()">
+              <option value="calendar">Select from Calendar</option>
+              <option value="manual">Manual Entry</option>
+            </select>
+          </div>
+          <div class="col-md-4" id="calendarInput">
+            <label class="form-label">Nepali Date</label>
+            <div class="d-flex gap-2">
+              <select class="form-select" id="monthSelect">
+                <option value="">Month</option>
+              </select>
+              <select class="form-select" id="daySelect">
+                <option value="">Day</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-4 d-none" id="manualInput">
+            <label for="eventDate" class="form-label">Nepali Date (YYYY-MM-DD)</label>
+            <input type="text" class="form-control" id="eventDate" placeholder="2082-01-01" />
+          </div>
+          <div class="col-md-6">
+            <label for="shortEventName" class="form-label">Short Event Name</label>
+            <input type="text" class="form-control" id="shortEventName" placeholder="Short Event Title" required />
+          </div>
+          <div class="col-md-6">
+            <label for="fullEventName" class="form-label">Full Event Name</label>
+            <input type="text" class="form-control" id="fullEventName" placeholder="Full Event Title" required />
+          </div>
+          <div class="col-md-12">
+            <div id="successMessage">Event added successfully!</div>
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn w-100" style="background-color: rgb(255, 96, 99); color: white;">Add Event</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div id="calendar"></div>
+  </div>
+
+  <script>
+    const nepaliMonths = [
+      { name: "Baisakh", gregorian: "April - May", days: 31, startDay: 1 },
+      { name: "Jestha", gregorian: "May - June", days: 31, startDay: 4 },
+      { name: "Ashadh", gregorian: "June - July", days: 32, startDay: 0 },
+      { name: "Shrawan", gregorian: "July - August", days: 31, startDay: 3 },
+      { name: "Bhadra", gregorian: "August - September", days: 31, startDay: 6 },
+      { name: "Ashwin", gregorian: "September - October", days: 31, startDay: 2 },
+      { name: "Kartik", gregorian: "October - November", days: 30, startDay: 5 },
+      { name: "Mangsir", gregorian: "November - December", days: 29, startDay: 1 },
+      { name: "Poush", gregorian: "December - January", days: 30, startDay: 2 },
+      { name: "Magh", gregorian: "January - February", days: 29, startDay: 4 },
+      { name: "Falgun", gregorian: "February - March", days: 30, startDay: 5 },
+      { name: "Chaitra", gregorian: "March - April", days: 30, startDay: 6 },
+    ];
+
+    const importantDays = {};
+
+    function toggleInputMode() {
+      const mode = document.getElementById("inputMode").value;
+      document.getElementById("calendarInput").classList.toggle("d-none", mode !== "calendar");
+      document.getElementById("manualInput").classList.toggle("d-none", mode !== "manual");
+    }
+
+    function toggleEventForm() {
+      const form = document.getElementById("eventForm");
+      form.style.display = form.style.display === "none" ? "block" : "none";
+    }
+
+    function addEvent(e) {
+      e.preventDefault();
+      const mode = document.getElementById("inputMode").value;
+      let date = "";
+
+      if (mode === "manual") {
+        date = document.getElementById("eventDate").value;
+      } else {
+        const month = document.getElementById("monthSelect").value;
+        const day = document.getElementById("daySelect").value;
+        if (!month || !day) {
+          showMessage("Please select both month and day.", "error");
+          return;
+        }
+        date = `2082-${month}-${day}`;
+      }
+
+      const shortName = document.getElementById("shortEventName").value.trim();
+      const fullName = document.getElementById("fullEventName").value.trim();
+
+      if (date && shortName && fullName) {
+        importantDays[date] = { short: shortName, full: fullName };
+        generateCalendar();
+        e.target.reset();
+        toggleInputMode();
+        showMessage("Event added successfully!", "success");
+      } else {
+        showMessage("Event not added. Please fill all fields.", "error");
+      }
+    }
+
+    function showMessage(msg, type) {
+      const successBox = document.getElementById("successMessage");
+      successBox.textContent = msg;
+      successBox.style.display = "block";
+      successBox.style.color = type === "success" ? "#155724" : "#721c24";
+      successBox.style.backgroundColor = type === "success" ? "#d4edda" : "#f8d7da";
+      successBox.style.borderColor = type === "success" ? "#c3e6cb" : "#f5c6cb";
+      setTimeout(() => (successBox.style.display = "none"), 3000);
+    }
+
+    function populateDropdowns() {
+      const monthSelect = document.getElementById("monthSelect");
+      const daySelect = document.getElementById("daySelect");
+      nepaliMonths.forEach((m, i) => {
+        monthSelect.innerHTML += `<option value="${(i + 1).toString().padStart(2, '0')}">${m.name}</option>`;
+      });
+      monthSelect.addEventListener("change", () => {
+        const monthIndex = parseInt(monthSelect.value) - 1;
+        daySelect.innerHTML = '<option value="">Day</option>';
+        for (let i = 1; i <= nepaliMonths[monthIndex].days; i++) {
+          daySelect.innerHTML += `<option value="${i.toString().padStart(2, '0')}">${i}</option>`;
+        }
+      });
+    }
+
+    function generateCalendar() {
+      const calendarDiv = document.getElementById("calendar");
+      calendarDiv.innerHTML = "";
+      let currentGregorian = new Date("2025-04-14");
+      let startDay = 1;
+      nepaliMonths.forEach((month, index) => {
+        const monthDiv = document.createElement("div");
+        monthDiv.className = "calendar-month";
+        let html = `<div class='d-flex justify-content-between align-items-center mb-3'>
+                      <div class='month-header'>${month.name} 2082</div>
+                      <div class='gregorian-month'>(${month.gregorian})</div>
+                    </div>`;
+        html += `<table class='table table-bordered calendar-table'>
+                   <thead><tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr></thead>
+                   <tbody>`;
+        let dayCounter = 1;
+        let weekDay = month.startDay;
+        while (dayCounter <= month.days) {
+          html += '<tr>';
+          for (let i = 0; i < 7; i++) {
+            if ((dayCounter === 1 && i < weekDay) || dayCounter > month.days) {
+              html += '<td></td>';
+            } else {
+              const nepaliDate = `2082-${(index + 1).toString().padStart(2, '0')}-${dayCounter.toString().padStart(2, '0')}`;
+              const gregorianDate = new Date(currentGregorian);
+              const gregorianDisplay = gregorianDate.getDate();
+              const gregorianMonth = gregorianDate.toLocaleString('default', { month: 'long' });
+              const event = importantDays[nepaliDate];
+              html += `<td>
+                          <div class="nepali-date">${dayCounter}</div>
+                          <div class="gregorian-date" data-month="${gregorianMonth}">${gregorianDisplay}</div>
+                          ${event ? `
+                            <div class='short-event' title="${event.full}">
+                              ${event.short}
+                            </div>` : ''}
+                        </td>`;
+              currentGregorian.setDate(currentGregorian.getDate() + 1);
+              dayCounter++;
+            }
+          }
+          html += '</tr>';
+        }
+        html += '</tbody></table>';
+        monthDiv.innerHTML = html;
+        calendarDiv.appendChild(monthDiv);
+      });
+    }
+
+    populateDropdowns();
+    generateCalendar();
+  </script>
+</body>
+</html>
